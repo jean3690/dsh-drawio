@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="dsh-drawio" version="1">
+  <diagram id="docker-arch" name="Docker架构图">
+    <mxGraphModel dx="0" dy="0" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="n-client" value="Docker 客户端&#10;Client&#10;(docker CLI / Docker Desktop)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="80" y="40" width="220" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="n-context" value="Dockerfile&#10;构建上下文 Build Context" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="370" y="55" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="n-registry" value="镜像仓库 Registry&#10;Docker Hub / 私有仓库" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="900" y="40" width="220" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane-host" value="Docker Host（宿主机）" style="swimlane;whiteSpace=wrap;html=1;fontSize=14;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;startSize=32;" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="1120" height="420" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane-daemon" value="Docker 守护进程 Docker Daemon (dockerd)" style="swimlane;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;fillColor=#e1d5e7;strokeColor=#9673a6;startSize=28;" vertex="1" parent="lane-host">
+          <mxGeometry x="30" y="70" width="620" height="310" as="geometry"/>
+        </mxCell>
+        <mxCell id="api" value="API Server&#10;Docker Engine API&#10;(REST / gRPC)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="lane-daemon">
+          <mxGeometry x="30" y="70" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="containerd" value="容器运行时&#10;containerd" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="lane-daemon">
+          <mxGeometry x="260" y="70" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="builder" value="镜像构建&#10;Image Builder" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="lane-daemon">
+          <mxGeometry x="30" y="160" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="runc" value="低级运行时&#10;runc (OCI)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="lane-daemon">
+          <mxGeometry x="260" y="160" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="shim" value="containerd-shim&#10;(隔离/回收)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="lane-daemon">
+          <mxGeometry x="470" y="115" width="130" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="img" value="镜像 Images" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" vertex="1" parent="lane-host">
+          <mxGeometry x="860" y="70" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ctr" value="容器 Containers" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" vertex="1" parent="lane-host">
+          <mxGeometry x="860" y="150" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="vol" value="数据卷 Volumes" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" vertex="1" parent="lane-host">
+          <mxGeometry x="860" y="230" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="net" value="网络 Networks" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" vertex="1" parent="lane-host">
+          <mxGeometry x="860" y="310" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="n-kernel" value="Linux 内核&#10;namespaces  ·  cgroups  ·  overlayfs  ·  iptables" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="260" y="680" width="680" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="e-client-api" value="REST API&#10;(docker build/pull/run ...)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#6c8ebf;fontSize=11;fontColor=#6c8ebf;;exitX=0.5;exitY=1;entryX=0.5;entryY=0" edge="1" parent="1" source="n-client" target="api">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="190" y="170"/><mxPoint x="190" y="300"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-context-api" value="构建上下文" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#6c8ebf;fontSize=10;fontColor=#6c8ebf;;exitX=0.5;exitY=1;entryX=0;entryY=0.5" edge="1" parent="1" source="n-context" target="api">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="460" y="115"/><mxPoint x="460" y="260"/><mxPoint x="100" y="260"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-api-builder" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#9673a6;;exitX=0.5;exitY=1;entryX=0.5;entryY=0" edge="1" parent="1" source="api" target="builder">
+          <mxGeometry relative="1" as="geometry">
+            
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-api-ctrd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#9673a6;;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="api" target="containerd">
+          <mxGeometry relative="1" as="geometry">
+            
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-ctrd-shim" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#b85450;;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="containerd" target="shim">
+          <mxGeometry relative="1" as="geometry">
+            
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-shim-runc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#b85450;;exitX=0.5;exitY=1;entryX=1;entryY=0.5" edge="1" parent="1" source="shim" target="runc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="605" y="460"/><mxPoint x="510" y="460"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-daemon-reg" value="pull / push&#10;镜像" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#d79b00;fontSize=11;fontColor=#d79b00;;exitX=1;exitY=0.1;entryX=0.5;entryY=1" edge="1" parent="1" source="lane-daemon" target="n-registry">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="301"/><mxPoint x="1180" y="301"/><mxPoint x="1180" y="130"/><mxPoint x="1010" y="130"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-runc-kernel" value="创建/运行容器" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#d6b656;fontSize=11;fontColor=#d6b656;;exitX=0.5;exitY=1;entryX=0.15;entryY=0" edge="1" parent="1" source="runc" target="n-kernel">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="640"/><mxPoint x="362" y="640"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-daemon-img" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#82b366;;exitX=1;exitY=0.1;entryX=0;entryY=0.5" edge="1" parent="1" source="lane-daemon" target="img">
+          <mxGeometry relative="1" as="geometry">
+            
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-daemon-ctr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#82b366;;exitX=1;exitY=0.35;entryX=0;entryY=0.5" edge="1" parent="1" source="lane-daemon" target="ctr">
+          <mxGeometry relative="1" as="geometry">
+            
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-daemon-vol" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#82b366;;exitX=1;exitY=0.61;entryX=0;entryY=0.5" edge="1" parent="1" source="lane-daemon" target="vol">
+          <mxGeometry relative="1" as="geometry">
+            
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-daemon-net" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#82b366;;exitX=1;exitY=0.87;entryX=0;entryY=0.5" edge="1" parent="1" source="lane-daemon" target="net">
+          <mxGeometry relative="1" as="geometry">
+            
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-img-ctr" value="基于镜像&#10;创建容器" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#82b366;fontSize=10;;exitX=0.5;exitY=1;entryX=0.5;entryY=0" edge="1" parent="1" source="img" target="ctr">
+          <mxGeometry relative="1" as="geometry">
+            
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-ctr-kernel" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;dashed=1;strokeColor=#d6b656;;exitX=0;exitY=0.5;entryX=0.5;entryY=0" edge="1" parent="1" source="ctr" target="n-kernel">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="900" y="380"/><mxPoint x="800" y="380"/><mxPoint x="800" y="640"/><mxPoint x="600" y="640"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
