@@ -14,7 +14,7 @@ import { dirname, join, resolve } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-workspace'
 import { parseDiagrams } from './translate.ts'
-import type { ListEntry, ReadResult, SaveResult } from './protocol.ts'
+import type { ListEntry, ReadResult, SaveResult, StatResult } from './protocol.ts'
 
 /** Diagram file extensions the board lists. */
 export const DIAGRAM_EXTENSIONS = new Set(['.drawio', '.xml', '.drawio.svg', '.svg'])
@@ -84,6 +84,7 @@ function safeRelative(root: string, path: string): string | null {
 export type DrawioOpResult =
   | { kind: 'list'; value: { entries: ListEntry[]; truncated: boolean } }
   | { kind: 'read'; value: ReadResult }
+  | { kind: 'stat'; value: StatResult }
   | { kind: 'save'; value: SaveResult }
   | { kind: 'error'; error: { code: string; message: string } }
 
@@ -166,6 +167,27 @@ export class DrawioService {
     } catch (error) {
       return { kind: 'error', error: { code: 'io', message: error instanceof Error ? error.message : String(error) } }
     }
+  }
+
+  /**
+   * Stat one diagram file (mtime + size only — the cheap poll the board uses
+   * to detect changes without transferring file content).
+   */
+  async stat(rootArg: string, path: string): Promise<DrawioOpResult> {
+    const gated = await verifyWorkspaceRoot(this.ctx, rootArg)
+    if (!gated.ok) return { kind: 'error', error: { code: 'workspace', message: gated.error } }
+    const root = gated.canonical
+    const rel = safeRelative(root, path)
+    if (rel === null) return { kind: 'error', error: { code: 'workspace', message: 'path escapes the workspace' } }
+    const target = join(root, ...rel.split('/'))
+    let info
+    try {
+      info = await stat(target)
+    } catch {
+      return { kind: 'error', error: { code: 'not-found', message: `no such file: ${rel}` } }
+    }
+    if (!info.isFile()) return { kind: 'error', error: { code: 'not-found', message: `not a file: ${rel}` } }
+    return { kind: 'stat', value: { path: rel, mtime: Math.floor(info.mtimeMs), size: info.size } }
   }
 
   /**

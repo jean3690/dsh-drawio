@@ -45,6 +45,19 @@ export interface ReadResult {
   mtime: number
 }
 
+/** Stat one diagram file (lightweight poll: no content transfer). */
+export interface StatRequest {
+  root: string
+  path: string
+}
+
+/** Stat response body. */
+export interface StatResult {
+  path: string
+  mtime: number
+  size: number
+}
+
 /** Save one diagram file (create/overwrite inside the workspace). */
 export interface SaveRequest {
   root: string

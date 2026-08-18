@@ -145,8 +145,8 @@ export function BoardView({
   }, [root, api])
 
   useEffect(() => {
-    void refresh()
-  }, [refresh])
+    if (showFiles) void refresh()
+  }, [refresh, showFiles])
 
   // ---- open one file -------------------------------------------------------
   const openFile = useCallback(async (path: string): Promise<void> => {
@@ -397,22 +397,20 @@ export function BoardView({
   }, [editorOpen, root, api, selected, persistFromEditor, injectEditorXml])
 
   // External change -> auto-reload the editor (the agent may have just edited
-  // the file). Only reload when the mtime moved without this editor writing it.
+  // the file). Cheap stat poll (no content transfer); falls back to a full
+  // read on hosts without the /stat route. The reload itself re-reads via
+  // ?url=, so only the mtime is ever needed here. Only reload when the mtime
+  // moved without this editor writing it.
   useEffect(() => {
     if (!editorOpen || root === '' || api === null || selected === null) return
     const timer = setInterval(async () => {
-      try {
-        const info = await api.read({ root, path: selected })
-        if (info.mtime !== lastKnownMtime) {
-          const wasEditorSave = lastKnownMtime !== null && info.mtime > lastKnownMtime
-          setLastKnownMtime(info.mtime)
-          if (wasEditorSave) {
-            setEditorNonce((n) => n + 1)
-            setSaveState({ kind: 'ok', message: t('editor.externalReload') })
-          }
-        }
-      } catch {
-        // File gone or unreadable: keep the editor as-is.
+      const mtime = await fileMtimeOf(api, root, selected)
+      if (mtime === null || mtime === lastKnownMtime) return
+      const wasEditorSave = lastKnownMtime !== null && mtime > lastKnownMtime
+      setLastKnownMtime(mtime)
+      if (wasEditorSave) {
+        setEditorNonce((n) => n + 1)
+        setSaveState({ kind: 'ok', message: t('editor.externalReload') })
       }
     }, 2500)
     return () => clearInterval(timer)
@@ -439,41 +437,37 @@ export function BoardView({
     return () => window.removeEventListener('dsh-drawio:open-path', onOpenPath)
   }, [openFile])
 
-  // Live follow (preview mode): every 1.5s re-read the open file; when the
-  // agent rewrote it (mtime moved), sync the XML editor + preview instantly —
+  // Live follow (preview mode): poll the file's stat every 1.5s (a tiny JSON
+  // round trip, no content) and only read + re-render when the mtime moved —
   // unless the user is mid-edit (their keystrokes must not be clobbered).
   useEffect(() => {
     if (root === '' || api === null || selected === null || editorOpen) return
     let last = fileMtime
     const timer = window.setInterval(async () => {
-      if (!followRef.current || userEditingRef.current) {
+      const mtime = await fileMtimeOf(api, root, selected)
+      if (mtime === null || mtime === last) return
+      last = mtime
+      setFileMtime(mtime)
+      if (followRef.current && !userEditingRef.current) {
         try {
-          const info = await api.read({ root, path: selected })
-          last = info.mtime
-          setFileMtime(info.mtime)
-        } catch {
-          // transient read failure: keep last mtime
-        }
-        return
-      }
-      try {
-        const info = await api.read({ root, path: selected })
-        if (info.mtime !== last) {
-          last = info.mtime
-          setFileMtime(info.mtime)
-          setXml(info.content)
+          const result = await api.read({ root, path: selected })
+          setXml(result.content)
           setSaveState({ kind: 'ok', message: t('follow.synced') })
+        } catch {
+          // file vanished between stat and read: keep the current view
         }
-      } catch {
-        // file gone/unreadable: keep the current view
       }
     }, 1500)
     return () => window.clearInterval(timer)
   }, [root, api, selected, editorOpen, fileMtime])
 
-  // File list auto-refresh: catch agent-created/deleted diagrams.
+  // File list auto-refresh: catch agent-created/deleted diagrams. Only runs
+  // while the pane is visible — the list scan walks the workspace tree, so
+  // hidden-pane polling would be pure waste.
   useEffect(() => {
     if (root === '' || api === null) return
+    if (!showFiles) return
+    void refresh()
     const timer = window.setInterval(() => {
       if (!followRef.current) return
       void api.list({ root }).then((result) => {
@@ -485,7 +479,7 @@ export function BoardView({
       }).catch(() => {})
     }, 5000)
     return () => window.clearInterval(timer)
-  }, [root, api])
+  }, [root, api, showFiles, refresh])
 
 
   const newFile = (): void => {
@@ -684,5 +678,23 @@ function currentRoot(sessions: SessionListStore): string {
     return typeof cwd === 'string' && cwd !== '' ? cwd : ''
   } catch {
     return ''
+  }
+}
+
+/**
+ * Current mtime of one diagram file — the cheap poll primitive. Prefers the
+ * light /stat route; falls back to a full read on hosts without it (the
+ * client stays compatible across host versions). Returns null when the file
+ * is unreadable.
+ */
+async function fileMtimeOf(api: DrawioRemote, root: string, path: string): Promise<number | null> {
+  try {
+    return (await api.stat({ root, path })).mtime
+  } catch {
+    try {
+      return (await api.read({ root, path })).mtime
+    } catch {
+      return null
+    }
   }
 }

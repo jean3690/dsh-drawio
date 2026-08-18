@@ -6,7 +6,7 @@
  * @module dsh-drawio/client/api
  */
 
-import type { DrawioEnvelope, ListResult, ReadResult, SaveResult } from '../protocol.ts'
+import type { DrawioEnvelope, ListResult, ReadResult, SaveResult, StatResult } from '../protocol.ts'
 
 /** Error carrying the route's JSON error message. */
 export class DrawioApiError extends Error {
@@ -40,10 +40,11 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return envelope.value
 }
 
-/** The board's host face: workspace-gated list/read/save bound to one root. */
+/** The board's host face: workspace-gated list/read/stat/save bound to one root. */
 export interface DrawioRemote {
   list: (request: { root: string; dir?: string }) => Promise<ListResult>
   read: (request: { root: string; path: string }) => Promise<ReadResult>
+  stat: (request: { root: string; path: string }) => Promise<StatResult>
   save: (request: { root: string; path: string; content: string }) => Promise<SaveResult>
 }
 
@@ -58,6 +59,10 @@ export class DrawioApi implements DrawioRemote {
 
   read(request: { root: string; path: string }): Promise<ReadResult> {
     return post<ReadResult>('/dsh-drawio/read', { root: this.root, path: request.path })
+  }
+
+  stat(request: { root: string; path: string }): Promise<StatResult> {
+    return post<StatResult>('/dsh-drawio/stat', { root: this.root, path: request.path })
   }
 
   save(request: { root: string; path: string; content: string }): Promise<SaveResult> {

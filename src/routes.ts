@@ -50,7 +50,9 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
     const buffer = chunk as Buffer
     chunks.push(buffer)
     total += buffer.length
-    if (total > 1 << 20) return null
+    // 16 MiB ceiling: comfortably above the 8 MiB per-file read cap so saving
+    // a large diagram never hits the body limit.
+    if (total > 16 << 20) return null
   }
   const text = Buffer.concat(chunks).toString('utf8')
   if (text === '') return null
@@ -87,6 +89,7 @@ function respond(res: ServerResponse, result: DrawioOpResult): void {
   switch (result.kind) {
     case 'list':
     case 'read':
+    case 'stat':
     case 'save':
       json(res, { ok: true, value: result.value })
       return
@@ -203,6 +206,16 @@ export function registerDrawioRoutes(ctx: Context, service: DrawioService): () =
           return
         }
         respond(res, await service.read(root, path))
+        return
+      }
+      case '/dsh-drawio/stat': {
+        const root = strField(payload, 'root')
+        const path = strField(payload, 'path')
+        if (root === null || path === null) {
+          json(res, { ok: false, error: BAD_REQUEST })
+          return
+        }
+        respond(res, await service.stat(root, path))
         return
       }
       case '/dsh-drawio/save': {
