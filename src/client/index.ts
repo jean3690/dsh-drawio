@@ -61,6 +61,10 @@ export async function apply(ctx: ClientContext): Promise<void> {
   const syncCol = (): void => { col.setOpen(controller.getSnapshot().open) }
   const unsubscribeCol = controller.subscribe(syncCol)
   syncCol()
+  // The board asks the shell to reveal the side column (e.g. after a
+  // standalone-tab 弹回画板 while the column was collapsed).
+  const onOpenCol = (): void => { col.setOpen(true) }
+  window.addEventListener('dsh-drawio:open-col', onOpenCol)
   const disposers: Array<() => void> = []
   // Agent drawio activity -> auto-open the board and point it at the file
   // the agent is drawing. The path goes through the open queue (not a window
@@ -90,6 +94,7 @@ export async function apply(ctx: ClientContext): Promise<void> {
 
   ctx.effect(() => () => {
     unsubscribeCol()
+    window.removeEventListener('dsh-drawio:open-col', onOpenCol)
     for (const dispose of disposers.splice(0)) dispose()
     col.dispose()
   }, 'dsh-drawio: surfaces')

@@ -48,6 +48,9 @@ export const ZH = {
   'zoom.out': '缩小',
   'zoom.fit': '适应',
   'zoom.tip': 'Ctrl/⌘ + 滚轮可在光标处缩放',
+  'popout.open': '独立页面',
+  'popout.tip': '在新标签页打开全屏 drawio 编辑器',
+  'popback.done': '已弹回画板',
 } as const
 
 export const EN: Record<keyof typeof ZH, string> = {
@@ -94,4 +97,7 @@ export const EN: Record<keyof typeof ZH, string> = {
   'zoom.out': 'Zoom out',
   'zoom.fit': 'Fit',
   'zoom.tip': 'Ctrl/⌘ + wheel zooms at the cursor',
+  'popout.open': 'Standalone',
+  'popout.tip': 'Open the full-screen drawio editor in its own tab',
+  'popback.done': 'Popped back to the board',
 }

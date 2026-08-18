@@ -269,6 +269,9 @@ export function BoardView({
   const [editorNonce, setEditorNonce] = useState(0)
   const [lastKnownMtime, setLastKnownMtime] = useState<number | null>(null)
   const editorRef = useRef<HTMLIFrameElement>(null)
+  // The standalone tab (「独立页面」): opened with window.open so it keeps an
+  // `opener` reference for the save/popback bridge.
+  const popoutRef = useRef<Window | null>(null)
 
   // Observe the preview pane. The board may first mount while the session
   // root is still '' (empty branch — no pane element), and the pane div is
@@ -396,6 +399,65 @@ export function BoardView({
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [editorOpen, root, api, selected, persistFromEditor, injectEditorXml])
+
+  // Standalone tab bridge (「独立页面」): the popout page was opened with
+  // window.open, so it keeps an `opener` reference back to this page and its
+  // postMessage calls arrive here. 保存 forwards the editor save (persisted
+  // like the in-board editor); 弹回画板 exports the XML, persists it, shows
+  // it in the board, and tells the tab to close itself.
+  const popBackFromPopout = useCallback(async (xml: string): Promise<void> => {
+    if (root === '' || api === null || selected === null) return
+    setSaveState({ kind: 'busy' })
+    try {
+      const result = await api.save({ root, path: selected, content: xml })
+      setXml(xml)
+      setSaveState({ kind: 'ok', message: t('popback.done') })
+      // Make sure the side column is visible, then close the standalone tab.
+      window.dispatchEvent(new CustomEvent('dsh-drawio:open-col'))
+      try {
+        popoutRef.current?.postMessage({ event: 'dsh-popback-done' }, window.location.origin)
+      } catch {
+        // Tab already closed: nothing to tell.
+      }
+      void refresh()
+    } catch (error) {
+      setSaveState({ kind: 'err', message: error instanceof Error ? error.message : String(error) })
+    }
+  }, [root, api, selected, refresh])
+
+  const openPopout = useCallback((): void => {
+    if (root === '' || selected === null) return
+    // ?v= busts the static file's 1h cache when the popout page changes.
+    const url = `/drawio/popout.html?v=3&root=${encodeURIComponent(root)}&path=${encodeURIComponent(selected)}`
+    const win = window.open(url, '_blank')
+    if (win !== null) popoutRef.current = win
+  }, [root, selected])
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent): void => {
+      const popout = popoutRef.current
+      if (popout === null || event.source !== popout) return
+      let data = event.data
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data)
+        } catch {
+          return
+        }
+      }
+      if (typeof data !== 'object' || data === null) return
+      const message = data as { event?: string; xml?: string; path?: string }
+      if (message.event === 'dsh-popout-save' && typeof message.xml === 'string') {
+        void persistFromEditor(message.xml)
+        return
+      }
+      if (message.event === 'dsh-popback' && typeof message.xml === 'string') {
+        void popBackFromPopout(message.xml)
+      }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [persistFromEditor, popBackFromPopout])
 
   // External change -> auto-reload the editor (the agent may have just edited
   // the file). Cheap stat poll (no content transfer); falls back to a full
@@ -562,6 +624,15 @@ export function BoardView({
           onClick={() => setFollowEnabled((v) => !v)}
         >
           {followEnabled ? t('follow.on') : t('follow.off')}
+        </button>
+        <button
+          type="button"
+          className={selected === null || root === '' ? styles.btnDisabled : styles.btn}
+          disabled={selected === null || root === ''}
+          title={t('popout.tip')}
+          onClick={openPopout}
+        >
+          {t('popout.open')}
         </button>
         <button
           type="button"

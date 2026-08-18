@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Drawio 画板 · 独立页面</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #f7f8fa; font-family: system-ui, sans-serif; }
+  #bar { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px;
+         background: #fff; border-bottom: 1px solid #e5e6eb; font-size: 13px; }
+  #path { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  #status { color: #86909c; font-size: 12px; }
+  button { border: 1px solid #e5e6eb; background: #f7f8fa; border-radius: 4px; padding: 4px 14px;
+           font-size: 12px; cursor: pointer; }
+  button.primary { border-color: #4080ff; background: #4080ff; color: #fff; }
+  #editor { display: block; width: 100%; height: calc(100% - 40px); border: none; }
+</style>
+</head>
+<body>
+  <div id="bar">
+    <span id="path"></span>
+    <span id="status"></span>
+    <button id="save">保存</button>
+    <button id="popback" class="primary">弹回画板</button>
+  </div>
+  <iframe id="editor" title="drawio editor"></iframe>
+<script>
+  const params = new URLSearchParams(window.location.search)
+  const root = params.get('root') || ''
+  const path = params.get('path') || ''
+  const origin = window.location.origin
+  document.getElementById('path').textContent = path || '(未指定文件)'
+  const raw = '/dsh-drawio/raw?root=' + encodeURIComponent(root) + '&path=' + encodeURIComponent(path)
+  const frame = document.getElementById('editor')
+  frame.src = '/drawio/index.html?embed=1&spin=1&proto=json&ui=min&mod=0&url=' + encodeURIComponent(raw)
+  const statusEl = document.getElementById('status')
+  const setStatus = (text) => { statusEl.textContent = text }
+  const postFrame = (msg) => { try { frame.contentWindow.postMessage(msg, origin) } catch { /* frame gone */ } }
+  const postOpener = (msg) => { try { if (window.opener) window.opener.postMessage(msg, origin) } catch { /* board closed */ } }
+  // 弹回画板 reuses the editor's save event (the most reliable embed
+  // protocol message) and forwards it as a popback instead of a plain save.
+  let popbackPending = false
+
+  // drawio waits for its parent in embed mode: the ?url= loader alone is
+  // unreliable, so (re)push the load message until the canvas has shapes
+  // (the same injection the in-board editor uses).
+  const rendered = () => {
+    try {
+      const doc = frame.contentDocument
+      return doc !== null && doc.querySelectorAll('.geDiagramContainer svg path, .geDiagramContainer svg rect, .geDiagramContainer foreignObject').length > 0
+    } catch { return false }
+  }
+  const inject = async () => {
+    if (rendered()) return
+    try {
+      const res = await fetch(raw)
+      if (!res.ok) return
+      const xml = await res.text()
+      postFrame({ event: 'load', data: { xml } })
+      postFrame(JSON.stringify({ action: 'load', xml }))
+    } catch { /* retry on the next tick */ }
+  }
+  const injectTimer = setInterval(() => { void inject() }, 2000)
+  setTimeout(() => { clearInterval(injectTimer) }, 60000)
+  void inject()
+
+  // Message actions alone don't make this drawio build save; clicking the
+  // editor's own Save button (the same UI path as File → Save) reliably
+  // emits the save event to this page.
+  const clickEditorSave = () => {
+    try {
+      const doc = frame.contentDocument
+      const btn = doc && [...doc.querySelectorAll('button')].find((b) => /save/i.test(b.textContent || ''))
+      if (btn) { btn.click(); return true }
+    } catch { /* iframe not ready */ }
+    return false
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.origin !== origin) return
+    // The board confirms a popback with {event:'dsh-popback-done'} — it comes
+    // from the opener window, not the editor iframe.
+    if (event.source !== frame.contentWindow) {
+      let data = event.data
+      if (typeof data === 'string') { try { data = JSON.parse(data) } catch { return } }
+      if (typeof data === 'object' && data !== null && data.event === 'dsh-popback-done') {
+        window.close()
+      }
+      return
+    }
+    let data = event.data
+    if (typeof data === 'string') { try { data = JSON.parse(data) } catch { return } }
+    if (typeof data !== 'object' || data === null) return
+    const message = data
+    if (message.event === 'init') {
+      void inject()
+    } else if (message.event === 'save' && typeof message.xml === 'string') {
+      if (popbackPending) {
+        popbackPending = false
+        setStatus('正在弹回…')
+        postOpener({ event: 'dsh-popback', xml: message.xml, path })
+      } else {
+        setStatus('已保存到工作区')
+        postOpener({ event: 'dsh-popout-save', xml: message.xml, path })
+      }
+    }
+  })
+
+  document.getElementById('save').addEventListener('click', () => { setStatus('保存中…'); if (!clickEditorSave()) postFrame({ action: 'save' }) })
+  document.getElementById('popback').addEventListener('click', () => { popbackPending = true; setStatus('正在弹回…'); if (!clickEditorSave()) postFrame({ action: 'save' }) })
+</script>
+</body>
+</html>
