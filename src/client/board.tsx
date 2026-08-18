@@ -12,6 +12,7 @@ import type { DrawioRemote } from './api.ts'
 import type { ListEntry } from '../protocol.ts'
 import { diagramToSvg, parseDiagrams } from '../translate.ts'
 import { t } from './i18n.ts'
+import { drainOpenPaths, subscribeOpenPath } from './open-queue.ts'
 import styles from './board.module.css'
 
 /** Session store shape the board reads the workspace root from. */
@@ -422,20 +423,23 @@ export function BoardView({
     setEditorOpen(false)
   }
 
-  // The host broadcasts agent drawio activity; when the agent starts drawing
-  // a file this board is not showing, open it (auto-open flow).
+  // The host broadcasts agent drawio activity through the open queue: live
+  // events arrive here as they happen; the SSE replay may arrive BEFORE this
+  // tree mounts and/or before a workspace root is selected, so the queue is
+  // drained whenever a root becomes available (mount included).
   useEffect(() => {
-    const onOpenPath = (event: Event): void => {
-      const path = (event as CustomEvent<string>).detail
-      if (typeof path !== 'string' || path === '') return
+    if (root === '' || api === null) return
+    const openIfNew = (path: string): void => {
       setSelected((prev) => {
         if (prev !== path) void openFile(path)
         return prev
       })
     }
-    window.addEventListener('dsh-drawio:open-path', onOpenPath)
-    return () => window.removeEventListener('dsh-drawio:open-path', onOpenPath)
-  }, [openFile])
+    const unsubscribe = subscribeOpenPath(openIfNew)
+    const queued = drainOpenPaths()
+    if (queued.length > 0) openIfNew(queued[queued.length - 1]!)
+    return unsubscribe
+  }, [root, api, openFile])
 
   // Live follow (preview mode): poll the file's stat every 1.5s (a tiny JSON
   // round trip, no content) and only read + re-render when the mtime moved —

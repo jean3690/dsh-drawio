@@ -16,6 +16,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-slots'
 import { DrawioController } from './controller.ts'
 import { DrawioCol } from './drawio-col.ts'
 import { subscribeDrawioEvents } from './events.ts'
+import { queueOpenPath } from './open-queue.ts'
 import { mountSidebarEntry } from './sidebar-entry.ts'
 import { mountDrawioView } from './view-mount.tsx'
 import { DrawioApi, type DrawioRemote } from './api.ts'
@@ -62,11 +63,13 @@ export async function apply(ctx: ClientContext): Promise<void> {
   syncCol()
   const disposers: Array<() => void> = []
   // Agent drawio activity -> auto-open the board and point it at the file
-  // the agent is drawing (the DOM event is consumed by BoardView).
+  // the agent is drawing. The path goes through the open queue (not a window
+  // event): the SSE replay can arrive before the board tree has mounted its
+  // listeners, and the board drains the queue once a root is available.
   disposers.push(subscribeDrawioEvents((activity) => {
     col.setOpen(true)
     if (typeof activity.path === 'string' && activity.path !== '') {
-      window.dispatchEvent(new CustomEvent('dsh-drawio:open-path', { detail: activity.path }))
+      queueOpenPath(activity.path)
     }
   }))
   try {
