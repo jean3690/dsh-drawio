@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="dsh-drawio" version="1">
+  <diagram id="jvm-runtime" name="JVM运行图">
+    <mxGraphModel dx="0" dy="0" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- 顶部：编译链 -->
+        <mxCell id="n-src" value="Java 源码&lt;br&gt;.java" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="80" y="40" width="150" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="n-javac" value="编译器&lt;br&gt;javac" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="330" y="40" width="150" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="n-class" value="字节码&lt;br&gt;.class 文件" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="40" width="150" height="50" as="geometry"/>
+        </mxCell>
+        <!-- 容器1：类加载子系统 -->
+        <mxCell id="lane1" value="类加载子系统" style="swimlane;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="150" width="320" height="360" as="geometry"/>
+          <mxCell id="c1-load" value="加载 Loading" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="lane1">
+            <mxGeometry x="40" y="64" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c1-verify" value="验证 Verification" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="lane1">
+            <mxGeometry x="40" y="120" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c1-prepare" value="准备 Preparation" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="lane1">
+            <mxGeometry x="40" y="176" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c1-resolve" value="解析 Resolution" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="lane1">
+            <mxGeometry x="40" y="232" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c1-init" value="初始化 Initialization" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="lane1">
+            <mxGeometry x="40" y="288" width="240" height="44" as="geometry"/>
+          </mxCell>
+        </mxCell>
+        <!-- 容器2：运行时数据区 -->
+        <mxCell id="lane2" value="运行时数据区" style="swimlane;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="400" y="150" width="340" height="360" as="geometry"/>
+          <mxCell id="c2-pc" value="程序计数器（线程私有）" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="lane2">
+            <mxGeometry x="50" y="64" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c2-stack" value="虚拟机栈（线程私有）" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="lane2">
+            <mxGeometry x="50" y="120" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c2-nstack" value="本地方法栈（线程私有）" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="lane2">
+            <mxGeometry x="50" y="176" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c2-heap" value="堆 Heap（线程共享）" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="lane2">
+            <mxGeometry x="50" y="232" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c2-method" value="方法区（线程共享）含常量池" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane2">
+            <mxGeometry x="50" y="288" width="240" height="44" as="geometry"/>
+          </mxCell>
+        </mxCell>
+        <!-- 容器3：执行引擎 -->
+        <mxCell id="lane3" value="执行引擎" style="swimlane;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="780" y="150" width="320" height="360" as="geometry"/>
+          <mxCell id="c3-interp" value="解释器 Interpreter" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="lane3">
+            <mxGeometry x="40" y="64" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c3-jit" value="JIT 编译器（热点优化）" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="lane3">
+            <mxGeometry x="40" y="120" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c3-gc" value="垃圾回收器 GC" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="lane3">
+            <mxGeometry x="40" y="176" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c3-gc2" value="GC Roots 可达性分析" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="lane3">
+            <mxGeometry x="40" y="232" width="240" height="44" as="geometry"/>
+          </mxCell>
+          <mxCell id="c3-gc3" value="分代回收 年轻代/老年代" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="lane3">
+            <mxGeometry x="40" y="288" width="240" height="44" as="geometry"/>
+          </mxCell>
+        </mxCell>
+        <!-- 底部：本地方法 -->
+        <mxCell id="n-jni" value="本地方法接口 JNI" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="380" y="600" width="170" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="n-jni-lib" value="本地方法库&lt;br&gt;C/C++ 实现" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="640" y="600" width="170" height="50" as="geometry"/>
+        </mxCell>
+        <!-- 边 -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#9673a6;" edge="1" parent="1" source="n-src" target="n-javac">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#9673a6;" edge="1" parent="1" source="n-javac" target="n-class">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" value="双亲委派" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;fontSize=11;strokeColor=#6c8ebf;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="n-class" target="lane1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="655" y="120"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#6c8ebf;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="lane1" target="lane2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="440" y="330"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="lane2" target="lane3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="820" y="330"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#d79b00;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="lane3" target="n-jni">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="655" y="550"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#9673a6;" edge="1" parent="1" source="n-jni" target="n-jni-lib">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" value="GC 回收堆内存" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;dashed=1;fontSize=11;fontColor=#b85450;strokeColor=#b85450;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="c3-gc" target="c2-heap">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="326"/>
+              <mxPoint x="680" y="326"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

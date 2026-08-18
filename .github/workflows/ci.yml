@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore: ['docs/**', 'demo/**', 'README.md']
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: build & test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck + bundle (tsc → tsdown → artifact self-check)
+        run: npm run build
+
+      - name: Run tests (translate / edit / dx-dy regression)
+        run: npm test
+
+      - name: Sanity check skill wiring
+        run: |
+          test -f skills/drawio/SKILL.md
+          test -f cordis.patch.yml
+          node -e "const p=require('./package.json'); if(!p.dsh?.bundle?.patch) process.exit(1)"

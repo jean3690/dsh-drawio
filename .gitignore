@@ -1,0 +1,8 @@
+node_modules/
+lib/
+out/
+.npm-cache/
+*.log
+.playwright/
+.playwright-cli/
+.agents/

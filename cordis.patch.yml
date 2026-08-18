@@ -1,0 +1,18 @@
+# dsh-drawio bundle patch: mounts the dual-face drawio plugin row into the web
+# profile roster. The node half (exports ".") runs in the host process (agent
+# drawio tools + the `drawio` Typert remote serving workspace file ops), and
+# the `dsh.client` declaration in package.json makes the browser half (exports
+# "./client", served at /plugins/dsh-drawio/client.js) load in the web GUI.
+#
+# Activate with: dsh plugin --profile web add link:/home/jean/program/dsh-drawio
+- insert:
+    - id: dsh-drawio
+      name: dsh-drawio
+      config:
+        # Agent-visible drawio tools. '*' = expose all built-ins; [] = none.
+        # Built-ins: drawio_validate, drawio_render, drawio_template.
+        agentTools: ['drawio_validate', 'drawio_render', 'drawio_template']
+        # PNG preview scale factor for drawio_render (default 2).
+        pngScale: 2
+        # Edge/vertex label font fallback list (CSS font-family).
+        fontFamily: "Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif"

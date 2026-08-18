@@ -1,0 +1,337 @@
+/* --- side-column layout -----------------------------------------------------
+   The board lives in the drawio side column (a trailing grid item beside the
+   conversation). No conversation hiding is involved: the chat stays visible
+   and the column width is controlled by the col controller. */
+/* --- board layout ------------------------------------------------------------ */
+
+.board {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--dsh-color-bg, #ffffff);
+  color: var(--dsh-color-text, #1d2129);
+  font-size: 13px;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--dsh-color-text-2, #86909c);
+  padding: 24px;
+  text-align: center;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dsh-color-border, #e5e6eb);
+  flex-wrap: wrap;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.root {
+  color: var(--dsh-color-text-2, #86909c);
+  font-size: 11px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.btn {
+  border: 1px solid var(--dsh-color-border, #e5e6eb);
+  background: var(--dsh-color-fill, #f7f8fa);
+  color: inherit;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--dsh-color-primary, #4080ff);
+  color: var(--dsh-color-primary, #4080ff);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btnPrimary {
+  border: 1px solid var(--dsh-color-primary, #4080ff);
+  background: var(--dsh-color-primary, #4080ff);
+  color: #ffffff;
+  border-radius: 4px;
+  padding: 3px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.nameInput {
+  border: 1px solid var(--dsh-color-border, #e5e6eb);
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 12px;
+  width: 170px;
+  outline: none;
+}
+.nameInput:focus {
+  border-color: var(--dsh-color-primary, #4080ff);
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.filePane {
+  width: 150px;
+  min-width: 120px;
+  border-right: 1px solid var(--dsh-color-border, #e5e6eb);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fileHeader {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--dsh-color-text-2, #86909c);
+  border-bottom: 1px solid var(--dsh-color-border, #e5e6eb);
+}
+
+.fileList {
+  flex: 1;
+  overflow: auto;
+  padding: 4px;
+  min-height: 0;
+}
+
+.file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.file:hover {
+  background: var(--dsh-color-fill, #f7f8fa);
+}
+.fileActive {
+  background: color-mix(in srgb, var(--dsh-color-primary, #4080ff) 14%, transparent);
+}
+
+.fileIcon {
+  display: inline-flex;
+  color: var(--dsh-color-primary, #4080ff);
+  flex: none;
+}
+
+.fileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editPane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.editorHeader,
+.previewHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--dsh-color-text-2, #86909c);
+  border-bottom: 1px solid var(--dsh-color-border, #e5e6eb);
+  background: var(--dsh-color-fill, #f7f8fa);
+  flex: none;
+}
+
+.editor {
+  flex: 0 0 160px;
+  min-height: 80px;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 10px 12px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  background: transparent;
+  color: inherit;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.preview {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: var(--dsh-color-bg, #ffffff);
+}
+
+.previewFrame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.hint {
+  padding: 24px;
+  color: var(--dsh-color-text-3, #c9cdd4);
+  text-align: center;
+  font-size: 12px;
+}
+
+.error {
+  padding: 10px 12px;
+  color: #d4380d;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+}
+
+.errorInline {
+  color: #d4380d;
+}
+
+.errorBar {
+  padding: 4px 12px;
+  color: #d4380d;
+  font-size: 12px;
+  border-top: 1px solid rgba(212, 56, 13, 0.3);
+  background: rgba(212, 56, 13, 0.06);
+}
+
+.okBar {
+  padding: 4px 12px;
+  color: #389e0d;
+  font-size: 12px;
+  border-top: 1px solid rgba(56, 158, 13, 0.3);
+  background: rgba(56, 158, 13, 0.06);
+}
+
+.stats {
+  margin-left: auto;
+}
+
+/* Sidebar entry row (injected DOM button). */
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 7px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 4px;
+}
+.entry:hover {
+  background: var(--dsh-color-fill, #f2f3f5);
+}
+.entry[data-active='true'] {
+  background: color-mix(in srgb, var(--dsh-color-primary, #4080ff) 14%, transparent);
+}
+.entryIcon {
+  display: inline-flex;
+  color: var(--dsh-color-primary, #4080ff);
+}
+
+/* --- official drawio editor mode -------------------------------------------- */
+.editorFrame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border: none;
+  display: block;
+  background: #ffffff;
+}
+
+.btnActive {
+  border: 1px solid var(--dsh-color-primary, #4080ff);
+  background: color-mix(in srgb, var(--dsh-color-primary, #4080ff) 14%, transparent);
+  color: var(--dsh-color-primary, #4080ff);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnDisabled {
+  border: 1px solid var(--dsh-color-border, #e5e6eb);
+  background: var(--dsh-color-fill, #f7f8fa);
+  color: var(--dsh-color-text-3, #c9cdd4);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.okInline {
+  color: #389e0d;
+  font-size: 12px;
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- inline SVG preview (no iframe: survives editor-mode DOM rebuild) ---------- */
+.previewSvg {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 12px;
+  box-sizing: border-box;
+  /* drawio diagrams are white canvas: never let the dark theme show through */
+  background: #ffffff;
+}
+.previewSvg :global(svg) {
+  width: 100%;
+  height: 100%;
+  min-width: 640px;
+  min-height: 420px;
+}
