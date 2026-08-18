@@ -12,6 +12,14 @@ updates:
     commit-message:
       prefix: chore(deps)
       prefix-development: chore(deps-dev)
+    ignore:
+      # react 18.3.1 is pinned to match the host GUI's React runtime; a
+      # mismatch breaks the shared client bundle. Dependabot would otherwise
+      # reopen pairing PRs forever.
+      - dependency-name: react
+      - dependency-name: react-dom
+      - dependency-name: '@types/react'
+      - dependency-name: '@types/react-dom'
 
   - package-ecosystem: github-actions
     directory: /
