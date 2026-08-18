@@ -48,6 +48,70 @@ export function BoardView({
   const [renderError, setRenderError] = useState<string | null>(null)
   const [renderPending, setRenderPending] = useState(false)
   const previewRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // ---- zoom: fit-to-pane by default; an explicit zoom level once the user
+  // zooms (toolbar buttons or ctrl/cmd + wheel, anchored at the cursor) -------
+  const [zoom, setZoom] = useState(1)
+  const [zoomFit, setZoomFit] = useState(true)
+  const [paneSize, setPaneSize] = useState({ w: 0, h: 0 })
+
+  // Natural diagram size from the rendered svg's viewBox.
+  const naturalSize = useMemo(() => {
+    if (renderResult === null) return null
+    const match = /viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/.exec(renderResult.svg)
+    return match === null ? null : { w: Number(match[3]), h: Number(match[4]) }
+  }, [renderResult])
+
+  // The scale that makes the diagram fit the pane (preserveAspectRatio meet).
+  const fitScale = useMemo(() => {
+    if (naturalSize === null || paneSize.w <= 0 || paneSize.h <= 0) return null
+    return Math.min(paneSize.w / naturalSize.w, paneSize.h / naturalSize.h)
+  }, [naturalSize, paneSize])
+
+  const clampZoom = (value: number): number => Math.min(8, Math.max(0.2, value))
+
+  const zoomBy = useCallback((factor: number): void => {
+    if (fitScale === null) return
+    setZoom(clampZoom((zoomFit ? fitScale : zoom) * factor))
+    setZoomFit(false)
+  }, [fitScale, zoomFit, zoom])
+
+  const zoomReset = useCallback((): void => setZoomFit(true), [])
+
+  // Wheel zoom: ctrl/cmd + wheel zooms around the cursor. Attached as a
+  // NATIVE listener (passive:false) — the app shell's React delegation does
+  // not reliably dispatch synthetic onWheel onto the preview subtree.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el === null) return
+    const onWheel = (event: WheelEvent): void => {
+      if (!event.ctrlKey && !event.metaKey) return
+      event.preventDefault()
+      if (fitScale === null) return
+      const oldScale = zoomFit ? fitScale : zoom
+      const factor = event.deltaY < 0 ? 1.15 : 1 / 1.15
+      const next = clampZoom(oldScale * factor)
+      // Anchor the point under the cursor: compute the content-space position
+      // before the scale change, then restore it once the new size is laid out.
+      const rect = el.getBoundingClientRect()
+      const px = event.clientX - rect.left + el.scrollLeft
+      const py = event.clientY - rect.top + el.scrollTop
+      const ratio = next / oldScale
+      setZoom(next)
+      setZoomFit(false)
+      requestAnimationFrame(() => {
+        el.scrollLeft = px * ratio - (event.clientX - rect.left)
+        el.scrollTop = py * ratio - (event.clientY - rect.top)
+      })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [fitScale, zoomFit, zoom, renderResult])
+
+  const zoomLabel = naturalSize !== null && fitScale !== null
+    ? `${Math.round((zoomFit ? fitScale : zoom) * 100)}%`
+    : '—'
 
   // ---- view modes: SVG-first; XML source and the file list are hidden
   // behind toggles so the diagram gets the whole column by default -----------
@@ -204,6 +268,21 @@ export function BoardView({
   const [editorNonce, setEditorNonce] = useState(0)
   const [lastKnownMtime, setLastKnownMtime] = useState<number | null>(null)
   const editorRef = useRef<HTMLIFrameElement>(null)
+
+  // Observe the preview pane. The board may first mount while the session
+  // root is still '' (empty branch — no pane element), and the pane div is
+  // replaced when the editor mode toggles, so re-attach whenever either
+  // changes. The observer fires again on col open/close (display:none → 0).
+  useEffect(() => {
+    const el = previewRef.current
+    if (el === null) return
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect
+      if (rect !== undefined) setPaneSize({ w: rect.width, h: rect.height })
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [root, editorOpen])
 
   const buildEditorUrl = useCallback((root: string, path: string): string => {
     // Encode the raw URL exactly ONCE. The other query params are flat values;
@@ -454,6 +533,22 @@ export function BoardView({
         </button>
         <button type="button" className={styles.btn} disabled={renderResult === null} onClick={() => void exportPng()}>{t('action.exportPng')}</button>
         <button type="button" className={styles.btn} disabled={renderResult === null} onClick={() => void copySvg()}>{t('action.copySvg')}</button>
+        {!editorOpen && (
+          <>
+            <button type="button" className={styles.btn} disabled={renderResult === null} title={t('zoom.out')} onClick={() => zoomBy(0.8)}>−</button>
+            <span className={styles.zoomLabel} title={t('zoom.tip')}>{zoomLabel}</span>
+            <button type="button" className={styles.btn} disabled={renderResult === null} title={t('zoom.in')} onClick={() => zoomBy(1.25)}>+</button>
+            <button
+              type="button"
+              className={zoomFit ? styles.btnActive : styles.btn}
+              disabled={renderResult === null}
+              title={t('zoom.fit')}
+              onClick={zoomReset}
+            >
+              {t('zoom.fit')}
+            </button>
+          </>
+        )}
         <button
           type="button"
           className={showSource ? styles.btnActive : styles.btn}
@@ -535,7 +630,15 @@ export function BoardView({
             {renderResult === null && renderError === null && <div className={styles.hint}>{t('preview.empty')}</div>}
             {renderError !== null && <div className={styles.error}>{renderError}</div>}
             {renderResult !== null && (
-              <div className={styles.previewSvg} dangerouslySetInnerHTML={{ __html: renderResult.svg }} />
+              <div className={styles.previewScroll} ref={scrollRef}>
+                <div
+                  className={styles.previewSvg}
+                  style={naturalSize === null || zoomFit
+                    ? { width: '100%', height: '100%' }
+                    : { width: naturalSize.w * zoom, height: naturalSize.h * zoom }}
+                  dangerouslySetInnerHTML={{ __html: renderResult.svg }}
+                />
+              </div>
             )}
           </div>
           {showSource && (

@@ -206,11 +206,35 @@
   background: var(--dsh-color-bg, #ffffff);
 }
 
-.previewFrame {
+/* Scrollable zoom stage: the svg is sized explicitly (fit or natural*zoom),
+   and `margin: auto` inside the flex scroll container centers it when it is
+   smaller than the pane while keeping overflowing content fully reachable. */
+.previewScroll {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: flex;
+  /* drawio diagrams are white canvas: never let the dark theme show through */
+  background: #ffffff;
+}
+
+.previewSvg {
+  margin: auto;
+  flex: none;
+}
+.previewSvg :global(svg) {
+  display: block;
   width: 100%;
   height: 100%;
-  border: none;
-  display: block;
+}
+
+.zoomLabel {
+  font-size: 12px;
+  color: var(--dsh-color-text-2, #86909c);
+  min-width: 42px;
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .hint {
@@ -317,21 +341,4 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* --- inline SVG preview (no iframe: survives editor-mode DOM rebuild) ---------- */
-.previewSvg {
-  position: absolute;
-  inset: 0;
-  overflow: auto;
-  padding: 12px;
-  box-sizing: border-box;
-  /* drawio diagrams are white canvas: never let the dark theme show through */
-  background: #ffffff;
-}
-.previewSvg :global(svg) {
-  width: 100%;
-  height: 100%;
-  min-width: 640px;
-  min-height: 420px;
 }

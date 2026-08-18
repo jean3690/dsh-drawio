@@ -44,6 +44,10 @@ export const ZH = {
   'export.done': 'PNG 已导出',
   'export.err': '导出失败',
   'copied': 'SVG 已复制',
+  'zoom.in': '放大',
+  'zoom.out': '缩小',
+  'zoom.fit': '适应',
+  'zoom.tip': 'Ctrl/⌘ + 滚轮可在光标处缩放',
 } as const
 
 export const EN: Record<keyof typeof ZH, string> = {
@@ -86,4 +90,8 @@ export const EN: Record<keyof typeof ZH, string> = {
   'export.done': 'PNG exported',
   'export.err': 'Export failed',
   'copied': 'SVG copied',
+  'zoom.in': 'Zoom in',
+  'zoom.out': 'Zoom out',
+  'zoom.fit': 'Fit',
+  'zoom.tip': 'Ctrl/⌘ + wheel zooms at the cursor',
 }
