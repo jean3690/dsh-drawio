@@ -86,6 +86,31 @@
   cursor: default;
 }
 
+/* Close control: collapses the board's side column (the board itself stays
+   mounted, so an unsaved XML draft survives). Square icon box at the end of
+   the toolbar, separated from the action buttons. */
+.btnClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  margin-left: 4px;
+  border: 1px solid var(--dsh-color-border, #e5e6eb);
+  background: var(--dsh-color-fill, #f7f8fa);
+  color: inherit;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.btnClose:hover {
+  border-color: var(--dsh-color-danger, #f53f3f);
+  color: var(--dsh-color-danger, #f53f3f);
+}
+
 .nameInput {
   border: 1px solid var(--dsh-color-border, #e5e6eb);
   background: transparent;

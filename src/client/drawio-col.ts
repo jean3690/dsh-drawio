@@ -6,6 +6,10 @@
  * element's width — so no shared style is ever rewritten and there is no
  * conflict with sibling panel plugins. Width is draggable and persisted.
  *
+ * The column also owns its caption inset: on DSH Desktop the native window
+ * controls are painted over the shell's top strip, so the column pads its
+ * content below that strip (0 on the plain web GUI).
+ *
  * @module dsh-drawio/client/drawio-col
  */
 
@@ -18,6 +22,33 @@ export const COL_WIDTH_KEY = 'dsh-drawio-col-width-px'
 const DEFAULT_WIDTH = 520
 const MIN_WIDTH = 300
 const MAX_WIDTH = 1000
+
+/** Dragging the handle this far past the minimum width closes the column. */
+const CLOSE_DRAG_OVERSHOOT = 64
+
+/** Body class DSH Desktop stamps when the native caption strip is in play. */
+export const CAPTION_LAYOUT_CLASS = 'dsh-desktop-windows-titlebar-layout'
+
+/** Caption strip height in DSH Desktop (its WINDOWS_TITLEBAR_HEIGHT). */
+export const CAPTION_STRIP_HEIGHT = 36
+
+/**
+ * Height of the native window caption strip (minimize / maximize / close) the
+ * desktop shell paints over the top of the column, or 0 on the plain web GUI.
+ * Read from the desktop's own layout stamp first, then from the boot query
+ * parameter it appends to the URL.
+ * @returns inset in CSS pixels.
+ */
+export function captionStripHeight(): number {
+  try {
+    if (document.body?.classList.contains(CAPTION_LAYOUT_CLASS) === true) return CAPTION_STRIP_HEIGHT
+    const raw = Number(new URLSearchParams(window.location.search).get('dsh-desktop-titlebar-inset'))
+    if (Number.isFinite(raw) && raw > 0) return raw
+  } catch {
+    // No document or no location: the plain web layout needs no inset.
+  }
+  return 0
+}
 
 /** Locate the frame grid: the `data-dsh-frame` stamp or the sidebar parent. */
 function findFrame(): HTMLElement | null {
@@ -46,8 +77,17 @@ export class DrawioCol {
   private col: HTMLDivElement | null = null
   private handle: HTMLDivElement | null = null
   private waitObserver: MutationObserver | null = null
+  private captionObserver: MutationObserver | null = null
   private width = persistedWidth()
   private open = false
+  private closePending = false
+
+  /**
+   * Closes the board through its owner (the entry wires this to the
+   * controller, so the sidebar entry highlight follows). Left null the column
+   * still stops at its minimum width — it just cannot close itself.
+   */
+  onRequestClose: (() => void) | null = null
 
   /** The column element once attached (null while the shell is not mounted). */
   get element(): HTMLElement | null {
@@ -72,7 +112,22 @@ export class DrawioCol {
     }
     this.waitObserver = new MutationObserver(() => { tryAttach() })
     this.waitObserver.observe(document.body, { childList: true, subtree: true })
+    // The desktop shell may stamp (or drop) its caption-strip layout class
+    // while the column is mounted: keep the published inset in step.
+    this.captionObserver = new MutationObserver(() => { this.syncCaptionInset() })
+    this.captionObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] })
     tryAttach()
+  }
+
+  /**
+   * Hold the column's content below the desktop caption strip: the window
+   * controls (minimize / maximize / close) are painted over the shell's top
+   * right, so this panel's own toolbar must stay out of their hit area.
+   */
+  private syncCaptionInset(): void {
+    if (this.col === null) return
+    const inset = captionStripHeight()
+    this.col.style.paddingTop = inset > 0 ? `${inset}px` : ''
   }
 
   /** Toggle the column (open ⇄ collapsed-to-zero). */
@@ -84,6 +139,7 @@ export class DrawioCol {
   setOpen(open: boolean): void {
     this.open = open
     if (this.col === null) return
+    this.syncCaptionInset()
     if (open) {
       this.col.style.width = `${this.width}px`
       this.col.style.display = 'flex'
@@ -107,6 +163,9 @@ export class DrawioCol {
     col.style.overflow = 'hidden'
     col.style.position = 'relative'
     col.style.height = '100%'
+    // border-box: the caption inset below is padding, and the column must keep
+    // occupying exactly one full-height grid row.
+    col.style.boxSizing = 'border-box'
     // The shell grid has explicit tracks (sidebar/conversation + sibling
     // panels); auto-placement would drop this column into a second (0px) row.
     // Pin it to row 1, column 6 — the first implicit track right of the
@@ -115,6 +174,7 @@ export class DrawioCol {
     col.style.gridColumn = '6'
     frame.appendChild(col)
     this.col = col
+    this.syncCaptionInset()
 
     // Drag handle on the column's left edge.
     const handle = document.createElement('div')
@@ -136,9 +196,16 @@ export class DrawioCol {
       const frameRight = frame.getBoundingClientRect().right
       const onMove = (move: PointerEvent): void => {
         // The column hugs the frame's right edge: width = right - cursor.
-        const next = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, frameRight - move.clientX))
-        this.width = next
+        const raw = frameRight - move.clientX
+        const next = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, raw))
+        // Past the minimum by a comfortable margin a release closes the board;
+        // dim the column while that is armed. The width floor is preserved, so
+        // reopening restores the last real width rather than the floor.
+        this.closePending = raw < MIN_WIDTH - CLOSE_DRAG_OVERSHOOT
+        col.style.opacity = this.closePending ? '0.45' : ''
         col.style.width = `${next}px`
+        if (this.closePending) return
+        this.width = next
         try {
           localStorage.setItem(COL_WIDTH_KEY, String(Math.round(next)))
         } catch {
@@ -148,6 +215,10 @@ export class DrawioCol {
       const onUp = (): void => {
         window.removeEventListener('pointermove', onMove)
         window.removeEventListener('pointerup', onUp)
+        col.style.opacity = ''
+        const close = this.closePending
+        this.closePending = false
+        if (close) this.onRequestClose?.()
       }
       window.addEventListener('pointermove', onMove)
       window.addEventListener('pointerup', onUp)
@@ -165,6 +236,8 @@ export class DrawioCol {
   /** Detach observers and the column. */
   dispose(): void {
     this.waitObserver?.disconnect()
+    this.captionObserver?.disconnect()
+    this.captionObserver = null
     this.col?.remove()
     this.col = null
     this.handle = null
