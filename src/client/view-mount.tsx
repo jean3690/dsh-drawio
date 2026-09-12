@@ -20,6 +20,7 @@ import { BoardView } from './board.tsx'
  * @param makeApi - binds one workspace root to a fresh /dsh-drawio API client.
  * @param sessions - the session store (workspace root).
  * @param fontFamily - label font family list.
+ * @param onClose - collapses the column (wired to the controller by the entry).
  * @returns disposer unmounting the tree.
  */
 export function mountDrawioView(
@@ -27,6 +28,7 @@ export function mountDrawioView(
   makeApi: (root: string) => DrawioRemote,
   sessions: SessionListStore,
   fontFamily: string,
+  onClose?: () => void,
 ): () => void {
   let root: Root | undefined
   let container: HTMLDivElement | null = null
@@ -40,7 +42,7 @@ export function mountDrawioView(
     container.style.cssText = 'display:flex;flex-direction:column;height:100%;min-width:0;'
     column.appendChild(container)
     root = createRoot(container)
-    root.render(<BoardView makeApi={makeApi} sessions={sessions} fontFamily={fontFamily} />)
+    root.render(<BoardView makeApi={makeApi} sessions={sessions} fontFamily={fontFamily} onClose={onClose} />)
   }
 
   const waitObserver = new MutationObserver(() => { ensure() })

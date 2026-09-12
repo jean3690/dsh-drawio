@@ -27,15 +27,38 @@ export { ICON_SVG }
 
 type SaveState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'ok'; message: string } | { kind: 'err'; message: string }
 
+/**
+ * Close control for the board's side column. Collapsing never unmounts the
+ * board, so an unsaved XML draft survives a close/reopen round trip.
+ * @param props - the collapse callback owned by the column controller.
+ * @returns the toolbar close button.
+ */
+function CloseButton({ onClose }: { onClose: () => void }): JSX.Element {
+  return (
+    <button
+      type="button"
+      className={styles.btnClose}
+      title={t('panel.closeTip')}
+      aria-label={t('panel.close')}
+      onClick={onClose}
+    >
+      ✕
+    </button>
+  )
+}
+
 export function BoardView({
   makeApi,
   sessions,
   fontFamily,
+  onClose,
 }: {
   /** Binds one workspace root to a fresh API client (rebuilt on session switch). */
   makeApi: (root: string) => DrawioRemote
   sessions: SessionListStore
   fontFamily: string
+  /** Collapses the board's side column (wired by the column owner); omit to hide the close control. */
+  onClose?: () => void
 }): JSX.Element {
   const root = useSyncExternalStoreSafe(sessions)
   const api = useMemo(() => (root === '' ? null : makeApi(root)), [root, makeApi])
@@ -560,6 +583,13 @@ export function BoardView({
   if (root === '') {
     return (
       <div className={styles.board}>
+        {onClose !== undefined && (
+          <div className={styles.toolbar}>
+            <span className={styles.title}>{t('panel.title')}</span>
+            <span className={styles.spacer} />
+            <CloseButton onClose={onClose} />
+          </div>
+        )}
         <div className={styles.empty}>{t('panel.noRoot')}</div>
       </div>
     )
@@ -645,6 +675,7 @@ export function BoardView({
         >
           {editorOpen ? t('action.editorClose') : t('action.editor')}
         </button>
+        {onClose !== undefined && <CloseButton onClose={onClose} />}
       </div>
 
       <div className={styles.main}>

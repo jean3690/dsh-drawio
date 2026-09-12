@@ -55,6 +55,9 @@ export async function apply(ctx: ClientContext): Promise<void> {
 
   const controller = new DrawioController()
   const col = new DrawioCol()
+  // Both close paths (the board's ✕, and dragging the handle past the minimum
+  // width) go through the controller so the sidebar entry highlight follows.
+  col.onRequestClose = () => { controller.closeBoard() }
   col.mount()
   // The controller owns the open state (sidebar highlight); the column
   // mirrors it (widens / collapses beside the conversation).
@@ -86,6 +89,7 @@ export async function apply(ctx: ClientContext): Promise<void> {
       makeApi,
       ctx.sessions.list as unknown as SessionListStore,
       fontFamily ?? "Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif",
+      () => { controller.closeBoard() },
     ))
   } catch (error) {
     // DOM failures degrade the 画板, never the GUI.
