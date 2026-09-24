@@ -54,7 +54,9 @@ export async function apply(ctx: ClientContext): Promise<void> {
   ctx.effect(() => ctx.locale.register(NS, { zh: ZH, en: EN }), 'dsh-drawio: dictionaries')
 
   const controller = new DrawioController()
-  const col = new DrawioCol()
+  // The close button lives in the column itself, so it must go through the
+  // controller — otherwise the sidebar row's highlight stays lit.
+  const col = new DrawioCol(() => { controller.setOpen(false) })
   col.mount()
   // The controller owns the open state (sidebar highlight); the column
   // mirrors it (widens / collapses beside the conversation).
@@ -63,7 +65,7 @@ export async function apply(ctx: ClientContext): Promise<void> {
   syncCol()
   // The board asks the shell to reveal the side column (e.g. after a
   // standalone-tab 弹回画板 while the column was collapsed).
-  const onOpenCol = (): void => { col.setOpen(true) }
+  const onOpenCol = (): void => { controller.setOpen(true) }
   window.addEventListener('dsh-drawio:open-col', onOpenCol)
   const disposers: Array<() => void> = []
   // Agent drawio activity -> auto-open the board and point it at the file
@@ -71,7 +73,7 @@ export async function apply(ctx: ClientContext): Promise<void> {
   // event): the SSE replay can arrive before the board tree has mounted its
   // listeners, and the board drains the queue once a root is available.
   disposers.push(subscribeDrawioEvents((activity) => {
-    col.setOpen(true)
+    controller.setOpen(true)
     if (typeof activity.path === 'string' && activity.path !== '') {
       queueOpenPath(activity.path)
     }

@@ -265,7 +265,9 @@ function renderTool(ctx: Context, config: Config): ToolDefinition {
           if (pngPath !== null) files.push(pngPath)
         }
         broadcastDrawioActivity({ kind: 'render', path: path })
-        if (preview !== true) return { ...result, files }
+        // `preview` declares "default true": only an explicit false opts out
+        // (matching drawio_edit's `preview !== false`).
+        if (preview === false) return { ...result, files }
         // Inline chat preview: rasterize once, reuse for the file when png was requested.
         const raster = await svgToPng(svg, config.pngScale)
         if (wantPng) {

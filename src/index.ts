@@ -29,8 +29,8 @@ import { buildAgentTools } from './tools.ts'
 
 export const name = 'dsh-drawio'
 
-/** Hard services: the tool registry + workspace registry + web server. */
-export const inject = ['tools', 'workspaceRegistry', 'webServer', 'loader']
+/** Hard services: the tool registry + workspace registry + web server + attachments. */
+export const inject = ['tools', 'workspaceRegistry', 'webServer', 'loader', 'attachments']
 
 export { resolveConfig } from './config.ts'
 export type { Config } from './config.ts'

@@ -22,14 +22,18 @@ export class DrawioController {
   }
 
   toggle(): void {
-    this.open = !this.open
+    this.setOpen(!this.open)
+  }
+
+  /** Set the open state explicitly (no-op when unchanged). */
+  setOpen(open: boolean): void {
+    if (this.open === open) return
+    this.open = open
     this.notify()
   }
 
   closeBoard(): void {
-    if (!this.open) return
-    this.open = false
-    this.notify()
+    this.setOpen(false)
   }
 
   subscribe(listener: Listener): () => void {

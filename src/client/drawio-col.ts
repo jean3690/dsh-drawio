@@ -9,8 +9,13 @@
  * @module dsh-drawio/client/drawio-col
  */
 
+import { t } from './i18n.ts'
+
 /** Stable attribute identifying the injected column. */
 export const COL_SELECTOR = '[data-dsh-drawio-col]'
+
+/** Stable attribute identifying the injected close button. */
+export const CLOSE_SELECTOR = '[data-dsh-drawio-close]'
 
 /** Width persistence key. */
 export const COL_WIDTH_KEY = 'dsh-drawio-col-width-px'
@@ -45,9 +50,17 @@ export class DrawioCol {
   private frame: HTMLElement | null = null
   private col: HTMLDivElement | null = null
   private handle: HTMLDivElement | null = null
+  private closeBtn: HTMLButtonElement | null = null
   private waitObserver: MutationObserver | null = null
   private width = persistedWidth()
   private open = false
+
+  /**
+   * @param closeBoard - invoked by the injected close button. The controller
+   * owns the open state, so the button must not flip this column directly:
+   * doing so would leave the sidebar row's highlight stale.
+   */
+  constructor(private readonly closeBoard: () => void = () => { this.setOpen(false) }) {}
 
   /** The column element once attached (null while the shell is not mounted). */
   get element(): HTMLElement | null {
@@ -157,17 +170,60 @@ export class DrawioCol {
     col.appendChild(handle)
     this.handle = handle
 
+    // Close button pinned to the column's top-right. The sidebar row that
+    // toggles the board is the only other way out, and on a phone that row
+    // sits in the drawer (translated off-screen) — without this button the
+    // board is open with no reachable control to close it.
+    const close = document.createElement('button')
+    close.type = 'button'
+    close.dataset.dshDrawioClose = ''
+    close.setAttribute('aria-label', t('close.label'))
+    close.textContent = '×'
+    close.style.cssText = [
+      'position:fixed',
+      // Below the mobile header band: the bridge renders its own fixed header
+      // (z-index 9998) across the top, so a button inside that band would be
+      // covered and the tap would reach the shell's header controls instead.
+      'top:calc(var(--dsh-mobile-header-h, 0px) + 10px)',
+      'right:12px',
+      'z-index:90',
+      'flex:none',
+      'box-sizing:border-box',
+      'width:32px',
+      'height:32px',
+      'border-radius:50%',
+      'border:1px solid rgba(0,0,0,0.12)',
+      'background:var(--dsw-alias-bg-layer-1,#ffffff)',
+      'color:var(--dsw-alias-label-primary,#111827)',
+      'font-size:20px',
+      'line-height:1',
+      'display:flex',
+      'align-items:center',
+      'justify-content:center',
+      'cursor:pointer',
+      'padding:0',
+      'pointer-events:auto',
+      'box-shadow:0 1px 3px rgba(0,0,0,0.12)',
+    ].join(';')
+    close.addEventListener('click', (event: MouseEvent) => {
+      event.stopPropagation()
+      this.closeBoard()
+    })
+    col.appendChild(close)
+    this.closeBtn = close
+
     // Apply the current open state: the frame may attach AFTER the user
     // already toggled the panel (shell mounts asynchronously).
     this.setOpen(this.open)
   }
 
-  /** Detach observers and the column. */
+  /** Detach observers, the viewport listener, and the injected elements. */
   dispose(): void {
     this.waitObserver?.disconnect()
     this.col?.remove()
     this.col = null
     this.handle = null
+    this.closeBtn = null
     this.frame = null
   }
 }
